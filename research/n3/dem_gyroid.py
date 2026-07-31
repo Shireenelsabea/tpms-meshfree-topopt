@@ -143,7 +143,7 @@ def main():
     se = (d.std().item() / np.sqrt(len(d))) * V_SOLID
     c1111 = 2 * U64 / (EPS**2 * 1.0)
     c_se = 2 * se / (EPS**2 * 1.0)
-    ASTER_REF = {0.2: 0.06724, 0.3: 0.10725, 0.45: 0.18581}  # converged KUBC values
+    ASTER_REF = {0.2: 0.06724, 0.3: 0.10725, 0.45: 0.18114}  # converged KUBC values
     ref = ASTER_REF.get(T_PARAM)
     print(f"AUDIT: U={U64:.5e} ± {se:.2e}  ->  C1111_DEM = {c1111:.4f} ± {c_se:.4f}")
     if ref:

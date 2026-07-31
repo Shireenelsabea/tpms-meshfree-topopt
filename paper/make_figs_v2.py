@@ -47,6 +47,7 @@ C_SOLID = "#4A6FA5"  # muted steel blue for 3D solids
 C_SOLID2 = "#A5484A"
 
 K = 2 * np.pi
+FEM_REF_T045 = 0.18114   # code_aster N128, converged (see Table A.5)
 
 def gyroid_F(X, Y, Z):
     return np.sin(X)*np.cos(Y) + np.sin(Y)*np.cos(Z) + np.sin(Z)*np.cos(X)
@@ -131,7 +132,8 @@ def fig2():
 # ------------------------------------------------------------------- Fig 3
 def fig3():
     vf = np.array([0.1288, 0.1934, 0.2910])
-    fem = np.array([0.06724, 0.10725, 0.18581])
+    # finest-grid code_aster references: N96, N64, N128 (see Table A.5)
+    fem = np.array([0.06724, 0.10725, FEM_REF_T045])
     dem = np.array([0.0705, 0.1127, 0.1856])
     audit = json.load(open(N3 / "e3_cond_audit.json"))
     ts = sorted(float(k) for k in audit)
@@ -149,8 +151,8 @@ def fig3():
             label="single-thickness DEM")
     ax.plot(vf, fem, "o", color=C_FEM, ms=8, mec="white", mew=0.8, zorder=4,
             label="voxel FEM (code_aster), mesh-converged")
-    for x, y, lab in zip(vf, fem, ["0.0672", "0.1073", "0.1858"]):
-        ax.annotate(lab, (x, y), textcoords="offset points", xytext=(8, -11),
+    for x, y in zip(vf, fem):
+        ax.annotate(f"{y:.4f}", (x, y), textcoords="offset points", xytext=(8, -11),
                     fontsize=8, color="0.25")
     ax.set_xlabel("solid volume fraction $V_f$")
     ax.set_ylabel("$C_{1111}$  (KUBC, $\\bar\\varepsilon_{11}$)")
@@ -159,8 +161,8 @@ def fig3():
 
     # (b) relative deviation at the FEM anchors
     dev_dem = (dem / fem - 1) * 100
-    dev_cond = np.array([(audit[f"{t:.2f}"]["ratio"] - 1) * 100
-                         for t in (0.2, 0.3, 0.45)])
+    dev_cond = np.array([audit[f"{t:.2f}"]["C1111"] for t in (0.2, 0.3, 0.45)])
+    dev_cond = (dev_cond / fem - 1) * 100
     xpos = np.arange(3)
     wbar = 0.34
     axb.axhspan(-5, 5, color="0.92", zorder=0)
@@ -179,10 +181,10 @@ def fig3():
     axb.set_xticklabels(["$V_f=0.13$\n$(t=0.20)$", "$V_f=0.19$\n$(t=0.30)$",
                          "$V_f=0.29$\n$(t=0.45)$"], fontsize=8.5)
     axb.set_ylabel("deviation from FEM  [%]")
-    axb.set_ylim(-3, 9.5)
+    axb.set_ylim(-1.5, 9.5)
     axb.legend(loc="upper right")
     axb.set_title("(b)", loc="left", fontsize=10)
-    axb.text(2.35, -2.4, "$\\pm5\\%$ band", fontsize=8, color="0.4",
+    axb.text(2.42, -1.15, "$\\pm5\\%$ band", fontsize=8, color="0.4",
              ha="right")
     fig.tight_layout(w_pad=2.0)
     save(fig, "fig3_c1111_vs_vf")

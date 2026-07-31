@@ -147,7 +147,7 @@ def main():
     model64 = make_model()
     sd = {k: v.double() for k, v in model.state_dict().items()}
     model64.load_state_dict(sd)
-    ASTER_REF = {0.2: 0.06724, 0.3: 0.10725, 0.45: 0.18581}
+    ASTER_REF = {0.2: 0.06724, 0.3: 0.10725, 0.45: 0.18114}
     audit = {}
     for t in (0.2, 0.25, 0.3, 0.35, 0.4, 0.45):
         ds = []
