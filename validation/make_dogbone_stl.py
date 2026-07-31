@@ -24,6 +24,7 @@ from pathlib import Path
 
 import numpy as np
 from skimage import measure
+from scipy.sparse import coo_matrix
 
 HERE = Path(__file__).parent
 N3 = HERE.parent / "research" / "n3"
@@ -37,7 +38,9 @@ RAMP_A, RAMP_B = 30.0, 40.0        # |x1-c| band over which t ramps to solid
                                    # RAMP_A = L_GAUGE/2: the pure-lattice band
                                    # spans exactly 4 x 2 x 1 cells, so both
                                    # designs integrate to the same gauge Vf
-VOX = 0.30                          # marching-cubes voxel (mm)
+VOX = 0.18                          # marching-cubes voxel (mm)
+SMOOTH_ITERS = 4                    # Taubin (non-shrinking) smoothing passes
+MARK_X1 = (30.0, 130.0)             # witness-line x1 positions (see notes below)
 RHO_PLA = 1.24e-3                   # g/mm^3
 CENTER = L_TOT / 2.0
 
@@ -75,6 +78,16 @@ def half_width(x1):
         np.maximum(R_FILLET**2 - np.where(fil, s, 0.0) ** 2, 0.0))
     return np.where(fil, h_f, h)
 
+GROOVE_HALF_W, GROOVE_DEPTH = 0.4, 0.4   # witness-line notch (mm)
+
+def witness_groove(x1, x3):
+    """Shallow scribe line across the top face at each MARK_X1, marking
+    the extensometer/DIC gauge points identically on every print."""
+    d_line = np.minimum(np.abs(x1 - MARK_X1[0]), np.abs(x1 - MARK_X1[1]))
+    d_depth = THICK - x3
+    groove_solid = np.maximum(d_line - GROOVE_HALF_W, d_depth - GROOVE_DEPTH)
+    return -groove_solid                # >0 inside the notch -> carve it
+
 def phi_mm(x1, x2, x3, graded):
     outline = np.maximum.reduce([
         np.abs(x2) - half_width(x1),
@@ -86,7 +99,25 @@ def phi_mm(x1, x2, x3, graded):
     s = smoothstep((g - RAMP_A) / (RAMP_B - RAMP_A))
     t_spec = t_design(u, v, w, graded) * (1 - s) + T_SOLID * s
     tpms = (np.abs(gyroid_F(u, v, w)) - t_spec) * (L_CELL / (2 * np.pi))
-    return np.maximum(outline, tpms)
+    body = np.maximum(outline, tpms)
+    return np.maximum(body, witness_groove(x1, x3))
+
+def taubin_smooth(verts, faces, iterations=SMOOTH_ITERS, lam=0.5, mu=-0.53):
+    """Non-shrinking Laplacian smoothing to remove marching-cubes facets
+    without eroding the design volume fraction."""
+    e = np.vstack([faces[:, [0, 1]], faces[:, [1, 2]], faces[:, [2, 0]]])
+    e = np.vstack([e, e[:, ::-1]])
+    n = len(verts)
+    A = coo_matrix((np.ones(len(e)), (e[:, 0], e[:, 1])), shape=(n, n)).tocsr()
+    deg = np.asarray(A.sum(axis=1)).ravel()
+    deg[deg == 0] = 1.0
+    v = verts.copy()
+    for _ in range(iterations):
+        avg = (A @ v) / deg[:, None]
+        v = v + lam * (avg - v)
+        avg = (A @ v) / deg[:, None]
+        v = v + mu * (avg - v)
+    return v
 
 def write_stl_binary(path, verts, faces):
     tri = verts[faces]
@@ -115,6 +146,8 @@ def build(graded, name):
     verts, faces, _, _ = measure.marching_cubes(P, level=0.0,
                                                 spacing=(VOX, VOX, VOX))
     verts += np.array([gx[0], gy[0], gz[0]])
+    n_tri = len(faces)
+    verts = taubin_smooth(verts, faces)
     write_stl_binary(HERE / f"{name}.stl", verts, faces)
 
     vol = float((P < 0).mean()) * (gx[-1]-gx[0]) * (gy[-1]-gy[0]) * (gz[-1]-gz[0])
@@ -126,7 +159,8 @@ def build(graded, name):
     qz = THICK * q[:, 2]
     vf = float(np.mean(phi_mm(qx, qy, qz, graded) < 0))
     print(f"{name}: mass(PLA)~{vol*RHO_PLA:.0f} g  solid={vol/1e3:.1f} cm^3  "
-          f"gauge Vf={vf:.4f}  ({len(faces)} triangles)")
+          f"gauge Vf={vf:.4f}  ({n_tri} triangles, VOX={VOX} mm, "
+          f"{SMOOTH_ITERS} Taubin passes)")
     return vf
 
 def preview():

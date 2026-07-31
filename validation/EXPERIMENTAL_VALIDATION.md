@@ -182,9 +182,41 @@ Caveat to record: the thinnest graded walls (t_min regions, ~0.34 mm
 designed at this cell size) will print at nozzle width; weigh both parts
 and report measured masses next to the designed 0.17% volume difference.
 
-Test: tension at 2 mm/min with an extensometer or DIC over the central
-50 mm of the gauge; three load-unload cycles in the elastic range;
-report the gauge-section stiffness ratio graded/uniform, n >= 3 pairs.
+Marker placement: both STLs now carry a shallow witness groove
+(0.8 mm wide, 0.4 mm deep, scribed across the full top-face width) at
+x1 = 30 mm and x1 = 130 mm, i.e. 50 mm either side of the specimen
+center, printed identically on both parts. These lines sit on the flat,
+fully solid shoulder just past the lattice-to-solid transition and
+fillet (which end by |x1-80| = 48 mm), so they are trackable,
+non-porous surface -- unlike the lattice gauge itself, which is too
+curved and open for reliable 2D marker tracking. Clip an extensometer
+to these two lines, or paint a dot on each for video/DIC tracking; the
+100 mm span between them is the reference gauge length for both
+specimens.
+
+Because this 100 mm span includes the graded transition and a few
+millimetres of shoulder in addition to the 60 mm pure-lattice band, the
+measured apparent modulus is diluted toward the (identical, stiffer)
+shoulder material on both specimens. Expect the measured stiffness
+ratio to sit below both the bulk KUBC ratio (1.091) and the
+single-cell-through-thickness structural ratio discussed above --
+report this dilution explicitly rather than compare directly to 1.091.
+
+Test: tension at 2 mm/min with an extensometer or DIC on the two
+witness lines; three load-unload cycles in the elastic range; report
+the gauge-section stiffness ratio graded/uniform, n >= 3 pairs.
+
+Printing position: print flat with x1 (loading axis) and x2 (width) in
+the bed plane, x3 (15 mm thickness) vertical, i.e. layers stack along
+the thickness and each layer is a full x1-x2 slice. This keeps the
+loading direction in-plane within every layer instead of across
+interlayer bonds, which is the standard best-practice orientation for
+FDM tensile coupons -- printing with x3 in-plane (layers perpendicular
+to the pull direction) would test interlayer adhesion strength instead
+of the material/lattice stiffness and must be avoided. No supports are
+needed; the gyroid gauge and the fillets are self-supporting. Use the
+identical orientation, plate location, and settings for both
+specimens.
 Expectations and caveats: the single-cell thickness and free lateral
 surfaces make this a structural comparison rather than a homogenization
 measurement, so the measured ratio will sit below the bulk KUBC value of
