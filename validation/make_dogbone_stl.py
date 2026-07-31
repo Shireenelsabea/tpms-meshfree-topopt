@@ -38,8 +38,8 @@ RAMP_A, RAMP_B = 30.0, 40.0        # |x1-c| band over which t ramps to solid
                                    # RAMP_A = L_GAUGE/2: the pure-lattice band
                                    # spans exactly 4 x 2 x 1 cells, so both
                                    # designs integrate to the same gauge Vf
-VOX = 0.18                          # marching-cubes voxel (mm)
-SMOOTH_ITERS = 4                    # Taubin (non-shrinking) smoothing passes
+VOX = 0.24                          # marching-cubes voxel (mm)
+SMOOTH_ITERS = 2                    # Taubin (non-shrinking) smoothing passes
 MARK_X1 = (30.0, 130.0)             # witness-line x1 positions (see notes below)
 RHO_PLA = 1.24e-3                   # g/mm^3
 CENTER = L_TOT / 2.0
