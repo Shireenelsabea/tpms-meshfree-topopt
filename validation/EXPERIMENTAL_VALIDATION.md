@@ -225,6 +225,45 @@ stiffer than uniform at equal mass) plus a visible, printable artifact
 of mesh-free geometry-parameter optimization. For the journal-grade
 number, use Track A.
 
+## 9.1 Third specimen: manufacturability-constrained gauge (recommended
+for printing)
+
+`dogbone_optimized.stl` uses the paper's headline theta* (t in
+[0.12,0.55]), which pushes 32% of the gauge domain to t_min and 22% to
+t_max (Table 4 in the manuscript). This creates locally steep
+thickness gradients that override the base gyroid's self-supporting
+property -- confirmed both by an overhang-area check (15.2% of gauge
+surface >45 degrees from horizontal, vs 14.0% for the uniform design)
+and by this design specifically triggering a slicer "floating
+regions" warning that the uniform design does not.
+
+`dogbone_optimized_printable.stl` (`research/n3/e3_optimize_printable.py`)
+re-solves the same problem with the thickness bounds narrowed to
+[0.20,0.45] (both anchors already FE-verified, Table 3) and an
+explicit closed-form smoothness penalty lambda_g * mean(|grad_x
+t(x)|^2) added to the objective -- grad(t) is exactly the term that
+tilts the level-set surface normal toward horizontal
+(grad(phi) = sign(F) k grad(F) - grad(t)), so penalizing it directly
+targets the mechanism, not just a symptom. Result: overhang area drops
+to 14.6% (uniform: 14.0%), essentially closing the gap.
+
+Verified by the same code_aster protocol as everything else in the
+paper (N64 and N96 voxel meshes, KUBC, identical boundary conditions):
+
+| | DEM predicted | FEM confirmed (N96) |
+|---|---|---|
+| unconstrained (dogbone_optimized.stl) | +17.5% | +9.1% |
+| constrained (dogbone_optimized_printable.stl) | +8.3% | **+9.7%** |
+
+The constrained design's FE-confirmed gain matches the unconstrained
+one within mesh noise, despite predicting under half the mesh-free
+gain -- the unconstrained design's extra *predicted* stiffness was
+mostly the DEM's own thin-wall bias (Section on N3 in the manuscript),
+which is largest exactly where that design saturates at t_min, not a
+real mechanical benefit. **Use `dogbone_optimized_printable.stl` as
+the optimized specimen for printing**: same real-world stiffness gain,
+self-supporting like the base gyroid, no support material needed.
+
 ## 10. What goes into the paper
 
 A new "Experimental validation" subsection: specimen table (Section 2),
